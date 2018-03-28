@@ -8,6 +8,8 @@ import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CURD {
     public static void main(String[] args) throws IOException{
@@ -24,11 +26,35 @@ public class CURD {
             hTableDesc.addFamily(new HColumnDescriptor("cf1"));
             admin.createTable(hTableDesc);
         }
+//      PUT
         Table table = conn.getTable(TableName.valueOf("tbl1"));
-        Put put = new Put(Bytes.toBytes("row-1"));
-        put.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("greet"), Bytes.toBytes("Hello"));
-        put.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("person"), Bytes.toBytes("John"));
-        table.put(put);
+        List<Put> puts = new ArrayList<Put>();
+        for(int i = 0; i< 100; i++){
+            Put put = new Put(Bytes.toBytes("row-"+i));
+            put.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("greet"), Bytes.toBytes("Hello"));
+            put.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("person"), Bytes.toBytes("John"));
+            puts.add(put);
+        }
+        table.put(puts);
+//    GET
+        Get get = new Get(Bytes.toBytes("row-10"));
+        get.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("greet"));
+        Result result = table.get(get);
+        byte[] val = result.getValue(Bytes.toBytes("cf1"), Bytes.toBytes("greet"));
+        System.out.println("Cell Value of row-10:" + Bytes.toString(val));
+
+//        SCAN
+        Scan scan = new Scan();
+        scan.addColumn(Bytes.toBytes("cf1"), Bytes.toBytes("greet"));
+        scan.setStartRow(Bytes.toBytes("row-1"));
+        scan.setStopRow(Bytes.toBytes("row-20"));
+        ResultScanner scanner = table.getScanner(scan);
+
+        for(Result res: scanner){
+            System.out.println("Row Value" + res);
+        }
+
+
         table.close();
 
     }
